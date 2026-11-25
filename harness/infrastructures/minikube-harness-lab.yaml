@@ -1,0 +1,13 @@
+infrastructureDefinition:
+  name: minikube-harness-lab
+  identifier: minikube_harness_lab
+  orgIdentifier: default
+  projectIdentifier: harness_lab
+  environmentRef: dev
+  deploymentType: Kubernetes
+  type: KubernetesDirect
+  spec:
+    connectorRef: minikube_cluster
+    namespace: harness-lab
+    releaseName: release-<+INFRA_KEY_SHORT_ID>
+  allowSimultaneousDeployments: false

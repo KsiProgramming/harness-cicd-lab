@@ -63,3 +63,77 @@ pipeline:
               tags:
                 - ${{ pipeline.sequenceId }}
                 - ${{ codebase.commitSha }}
+    - id: deploy_dev
+      name: deploy-dev
+      service:
+        type: kubernetes
+        items:
+          - harness_lab_api
+      environment:
+        id: dev
+        deploy-to: minikube_harness_lab
+      runtime:
+        kubernetes:
+          namespace: harness-delegate-ng
+          connector: minikube_cluster
+      steps:
+        - id: canary_deploy
+          name: canary-deploy
+          timeout: 10m
+          template:
+            uses: k8sCanaryDeployStep
+            with:
+              unit: count
+              instances: "1"
+        - id: canary_health
+          name: canary-health
+          timeout: 2m
+          template:
+            uses: httpStep
+            with:
+              url: http://harness-lab-api-canary.harness-lab.svc.cluster.local/healthz
+              method: GET
+              assertion: <+httpResponseCode> == 200
+        - id: approve_promotion
+          name: approve-promotion
+          timeout: 30m
+          approval:
+            uses: harness
+            with:
+              message: Canary of run ${{ pipeline.sequenceId }} is healthy. Promote to all replicas?
+              user-groups:
+                - _project_all_users
+              approvers-min-count: 1
+              block-executor: false
+              auto-approve: false
+        - id: canary_delete
+          name: canary-delete
+          timeout: 10m
+          template:
+            uses: k8sCanaryDeleteStep
+            with:
+              resources: <+stage.steps.canary_deploy.output.outputVariables.canaryWorkloads>
+              is_openshift: <+stage.steps.canary_deploy.output.outputVariables.isOpenshift>
+        - id: rolling_deploy
+          name: rolling-deploy
+          timeout: 10m
+          template:
+            uses: k8sRollingDeployStep
+      rollback:
+        - group:
+            steps:
+              - id: rollback_canary_delete
+                name: rollback-canary-delete
+                template:
+                  uses: k8sCanaryDeleteStep
+                  with:
+                    select_delete_resources: resources
+                    resources: ${{rollback.data.PLUGIN_CANARY_WORKLOADS}}
+                    is_openshift: ${{rollback.data.HARNESS_IS_OPENSHIFT}}
+              - id: rollback_rolling
+                name: rollback-rolling
+                template:
+                  uses: k8sRollingRollbackStep
+      on-failure:
+        errors: all
+        action: stage-rollback

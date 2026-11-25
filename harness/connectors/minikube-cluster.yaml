@@ -1,0 +1,11 @@
+connector:
+  name: minikube-cluster
+  identifier: minikube_cluster
+  orgIdentifier: default
+  projectIdentifier: harness_lab
+  type: K8sCluster
+  spec:
+    credential:
+      type: InheritFromDelegate
+    delegateSelectors:
+      - minikube

@@ -1,0 +1,6 @@
+name: harness-lab-api
+namespace: <+infra.namespace>
+replicas: 3
+image: <+artifacts.primary.image>
+containerPort: 8080
+servicePort: 80
