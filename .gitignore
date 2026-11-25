@@ -1,0 +1,32 @@
+# Secrets: never commit
+.env
+*.env
+*.key
+*token*
+delegate-values*.yaml
+harness-delegate*.yml
+harness-delegate*.yaml
+
+# Lab notes stay local (decision Lab 3 / D2): only code (app/, k8s/, harness/) is public
+/docs/
+/exercises/
+/journal/
+/PROGRESS.md
+/CLAUDE.md
+/lab.md
+
+# .NET
+bin/
+obj/
+*.user
+TestResults/
+
+# IDE / OS
+.vs/
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store
+
+# Claude local settings
+.claude/settings.local.json

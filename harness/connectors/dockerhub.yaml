@@ -1,0 +1,18 @@
+# Docker Hub connector (project scope), used to push the CI image (and later by CD to pull it).
+# Secret `dockerhub_pat` = Docker Hub personal access token (Read & Write), never the password.
+# executeOnDelegate: false -> connect through the Harness Platform (works with Harness Cloud).
+connector:
+  name: dockerhub-essaidlab
+  identifier: dockerhub_essaidlab
+  orgIdentifier: default
+  projectIdentifier: harness_lab   # confirm in UI
+  type: DockerRegistry
+  spec:
+    dockerRegistryUrl: https://index.docker.io/v2/
+    providerType: DockerHub
+    auth:
+      type: UsernamePassword
+      spec:
+        username: essaidlab
+        passwordRef: dockerhub_pat
+    executeOnDelegate: false
