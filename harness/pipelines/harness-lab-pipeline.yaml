@@ -1,9 +1,16 @@
 pipeline:
   name: harness-lab-pipeline
+  inputs:
+    branch:
+      type: string
+      default: main
   clone:
     connector: github_ksiprogramming
     repo: KsiProgramming/harness-cicd-lab
     depth: 1
+    ref:
+      type: branch
+      name: ${{ inputs.branch }}
   stages:
     - id: build_and_test
       name: build-and-test
@@ -34,6 +41,14 @@ pipeline:
               path: app/TestResults/junit.xml
             intelligence:
               disabled: true
+        - id: prepare_image
+          name: prepare-image
+          run:
+            shell: sh
+            script: |
+              set -e
+              sed -i "s/^ARG APP_VERSION=.*/ARG APP_VERSION=${{ pipeline.sequenceId }}/" app/Dockerfile
+              grep "^ARG APP_VERSION" app/Dockerfile
         - id: build_and_push_dockerhub
           name: build-and-push-dockerhub
           template:
@@ -45,7 +60,6 @@ pipeline:
               caching: true
               dockerfile: app/Dockerfile
               context: app
-              build_args:
-                APP_VERSION: ${{ pipeline.sequenceId }}
               tags:
                 - ${{ pipeline.sequenceId }}
+                - ${{ codebase.commitSha }}
