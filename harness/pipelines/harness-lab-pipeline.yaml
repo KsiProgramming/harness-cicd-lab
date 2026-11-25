@@ -1,72 +1,51 @@
-# Harness CI/CD lab pipeline.
-# Lab 3: CI stage on Harness Cloud: clone -> test (.NET 10, JUnit report) -> build & push image.
-# Lab 4 will append a CD stage (Kubernetes manifests, canary) to this same pipeline.
 pipeline:
   name: harness-lab-pipeline
-  identifier: harness_lab_pipeline
-  orgIdentifier: default
-  projectIdentifier: harness_lab   # confirm in UI
-  tags:
-    lab: harness-cicd
-  properties:
-    ci:
-      codebase:
-        connectorRef: github_ksiprogramming
-        repoName: harness-cicd-lab
-        build: <+input>              # branch / tag / PR chosen at run time (main by default)
+  clone:
+    connector: github_ksiprogramming
+    repo: KsiProgramming/harness-cicd-lab
+    depth: 1
   stages:
-    - stage:
-        name: Build and Test
-        identifier: build_and_test
-        description: Compile and test the .NET API, then build and push the Docker image
-        type: CI
-        spec:
-          cloneCodebase: true
-          platform:
-            os: Linux
-            arch: Amd64
-          runtime:
-            type: Cloud              # Harness Cloud: Harness-hosted ephemeral VM, nothing to maintain
-            spec: {}
-          execution:
-            steps:
-              - step:
-                  type: Run
-                  name: Restore Build Test
-                  identifier: restore_build_test
-                  spec:
-                    # Same SDK image as the Dockerfile build stage: one toolchain everywhere.
-                    image: mcr.microsoft.com/dotnet/sdk:10.0
-                    shell: Sh
-                    envVariables:
-                      DOTNET_CLI_TELEMETRY_OPTOUT: "1"
-                      DOTNET_NOLOGO: "1"
-                    command: |-
-                      set -e
-                      cd app
-                      dotnet --info | head -n 5
-                      dotnet test HarnessLab.slnx -c Release \
-                        --results-directory TestResults \
-                        --logger "junit;LogFileName=junit.xml" \
-                        --logger "console;verbosity=normal"
-                  reports:
-                    type: JUnit
-                    spec:
-                      paths:
-                        - app/TestResults/*.xml
-              - step:
-                  type: BuildAndPushDockerRegistry
-                  name: Build and Push to Docker Hub
-                  identifier: build_and_push_dockerhub
-                  spec:
-                    connectorRef: dockerhub_essaidlab
-                    repo: essaidlab/harness-lab-api
-                    dockerfile: app/Dockerfile
-                    context: app
-                    buildArgs:
-                      APP_VERSION: <+pipeline.sequenceId>-<+codebase.shortCommitSha>
-                    # Immutable tags: run number (what CD deploys) + commit SHA (traceability).
-                    # No "latest": deployments must reference an exact build.
-                    tags:
-                      - <+pipeline.sequenceId>
-                      - <+codebase.shortCommitSha>
+    - id: build_and_test
+      name: build-and-test
+      runtime: cloud
+      platform:
+        os: linux
+        arch: amd64
+      steps:
+        - id: restore_build_test
+          name: restore-build-test
+          run-test:
+            container:
+              image: mcr.microsoft.com/dotnet/sdk:10.0
+            shell: sh
+            env:
+              DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+              DOTNET_NOLOGO: "1"
+            script: |
+              set -e
+              cd app
+              dotnet --info | head -n 5
+              dotnet test HarnessLab.slnx -c Release \
+                --results-directory TestResults \
+                --logger "junit;LogFileName=junit.xml" \
+                --logger "console;verbosity=normal"
+            report:
+              type: junit
+              path: app/TestResults/junit.xml
+            intelligence:
+              disabled: true
+        - id: build_and_push_dockerhub
+          name: build-and-push-dockerhub
+          template:
+            uses: buildAndPushToDocker
+            with:
+              connector: dockerhub_essaidlab
+              repo: essaidlab/harness-lab-api
+              build_mode: build_and_push
+              caching: true
+              dockerfile: app/Dockerfile
+              context: app
+              build_args:
+                APP_VERSION: ${{ pipeline.sequenceId }}
+              tags:
+                - ${{ pipeline.sequenceId }}

@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace HarnessLab.Api.Tests;
 
-// Unit tests: pure logic, no HTTP.
 public class GreeterTests
 {
     [Theory]
@@ -14,7 +13,6 @@ public class GreeterTests
         Assert.Equal(expected, Greeter.Greet(input));
 }
 
-// Integration tests: the real ASP.NET Core pipeline hosted in memory (no Docker, no network).
 public class ApiTests(WebApplicationFactory<Program> factory)
     : IClassFixture<WebApplicationFactory<Program>>
 {

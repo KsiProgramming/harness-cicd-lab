@@ -7,7 +7,6 @@ delegate-values*.yaml
 harness-delegate*.yml
 harness-delegate*.yaml
 
-# Lab notes stay local (decision Lab 3 / D2): only code (app/, k8s/, harness/) is public
 /docs/
 /exercises/
 /journal/

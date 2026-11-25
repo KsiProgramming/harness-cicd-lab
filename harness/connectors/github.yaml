@@ -1,12 +1,8 @@
-# GitHub connector (project scope). Account-level URL so repoName is set per pipeline.
-# Secret `github_pat` = GitHub fine-grained PAT, stored in Harness' built-in secret manager.
-# executeOnDelegate: false -> Harness SaaS talks to GitHub directly. Required because the
-# CI stage runs on Harness Cloud, which cannot reach our minikube delegate.
 connector:
   name: github-ksiprogramming
   identifier: github_ksiprogramming
   orgIdentifier: default
-  projectIdentifier: harness_lab   # confirm in UI (Project Settings -> Overview -> Id)
+  projectIdentifier: harness_lab
   type: Github
   spec:
     url: https://github.com/KsiProgramming
